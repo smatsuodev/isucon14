@@ -145,6 +145,8 @@ func postInitialize(w http.ResponseWriter, r *http.Request) {
 
 	http.Get("http://localhost:9000/api/group/collect")
 
+	startBulkInsertQueue()
+
 	writeJSON(w, http.StatusOK, postInitializeResponse{Language: "go"})
 }
 
