@@ -16,16 +16,18 @@ type ChairTotalDistance struct {
 
 type AppCache struct {
 	chairTotalDistances Cache[string, ChairTotalDistance]
+	latestChairLocation Cache[string, ChairLocation]
 }
 
 func NewAppCache() *AppCache {
 	c := &AppCache{
 		// chair が 530 くらい
 		chairTotalDistances: lo.Must1(NewInMemoryLRUCache[string, ChairTotalDistance](1000)),
+		latestChairLocation: lo.Must1(NewInMemoryLRUCache[string, ChairLocation](1000)),
 	}
 
 	// chairTotalDistances の初期化
-	totalDistances := []ChairTotalDistance{}
+	var totalDistances []ChairTotalDistance
 	if err := db.Select(&totalDistances, `
 		WITH tmp AS (
 			SELECT chair_id,
@@ -44,6 +46,19 @@ func NewAppCache() *AppCache {
 	}
 	for _, totalDistance := range totalDistances {
 		_ = c.chairTotalDistances.Set(context.Background(), totalDistance.ChairID, totalDistance)
+	}
+
+	var chairLocations []ChairLocation
+	if err := db.Select(&chairLocations, `
+		WITH tmp AS (
+		    SELECT id, MAX(created_at) FROM chair_locations GROUP BY chair_id
+		)
+		SELECT * FROM chair_locations WHERE id IN (SELECT id FROM tmp)
+	`); err != nil {
+		panic(err)
+	}
+	for _, chairLocation := range chairLocations {
+		_ = c.latestChairLocation.Set(context.Background(), chairLocation.ChairID, chairLocation)
 	}
 
 	return c
