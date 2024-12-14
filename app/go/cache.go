@@ -31,6 +31,7 @@ func initChairLocationCache(ctx context.Context, cache *AppCache) error {
 	   longitude,
 	   created_at
 FROM chair_locations
+ORDER BY created_at ASC
 `); err != nil {
 		return err
 	}
