@@ -1,0 +1,5 @@
+.vscode
+.idea
+.task
+.env
+__pycache__
