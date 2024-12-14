@@ -125,7 +125,7 @@ func chairPostCoordinate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, &chairPostCoordinateResponse{
-		RecordedAt: time.Now().UnixMilli(),
+		RecordedAt: location.CreatedAt.UnixMilli(),
 	})
 }
 
