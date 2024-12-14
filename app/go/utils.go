@@ -106,3 +106,9 @@ func (c *redisCache[V]) Clear(ctx context.Context) error {
 func NewRedisCache[V any](rdb redis.Client) Cache[string, V] {
 	return &redisCache[V]{rdb: rdb}
 }
+
+func Const[T any](v T) func() T {
+	return func() T {
+		return v
+	}
+}

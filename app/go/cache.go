@@ -75,12 +75,14 @@ func updateTotalDistanceCache(ctx context.Context, prevLoc Maybe[*ChairLocation]
 		0,
 	)
 	current, _ := cache.chairTotalDistances.Get(ctx, loc.ChairID)
-	value := current.Value
-
-	value.TotalDistance = lo.Ternary(current.Found, current.Value.TotalDistance+diff, 0)
-	value.TotalDistanceUpdatedAt = sql.NullTime{
-		Time:  loc.CreatedAt,
-		Valid: true,
-	}
-	cache.chairTotalDistances.Set(ctx, loc.ChairID, value)
+	cache.chairTotalDistances.Set(ctx, loc.ChairID, &ChairTotalDistance{
+		ChairID: loc.ChairID,
+		TotalDistance: lo.TernaryF(current.Found, func() int {
+			return current.Value.TotalDistance + diff
+		}, Const(0)),
+		TotalDistanceUpdatedAt: sql.NullTime{
+			Time:  loc.CreatedAt,
+			Valid: true,
+		},
+	})
 }
