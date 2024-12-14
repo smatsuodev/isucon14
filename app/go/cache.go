@@ -69,10 +69,12 @@ func updateLatestLocationCache(ctx context.Context, loc *ChairLocation) {
 }
 
 func updateTotalDistanceCache(ctx context.Context, prevLoc Maybe[*ChairLocation], loc *ChairLocation) {
-	diff := lo.Ternary(
+	diff := lo.TernaryF(
 		prevLoc.Found,
-		calculateDistance(prevLoc.Value.Latitude, prevLoc.Value.Longitude, loc.Latitude, loc.Longitude),
-		0,
+		func() int {
+			return calculateDistance(prevLoc.Value.Latitude, prevLoc.Value.Longitude, loc.Latitude, loc.Longitude)
+		},
+		Const(0),
 	)
 	current, _ := cache.chairTotalDistances.Get(ctx, loc.ChairID)
 	cache.chairTotalDistances.Set(ctx, loc.ChairID, &ChairTotalDistance{
