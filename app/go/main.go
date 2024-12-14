@@ -115,12 +115,6 @@ func setup() http.Handler {
 
 	mux.Handle("/debug/*", integration.NewDebugHandler())
 
-	cache = NewCache()
-	err = initChairLocationCache(context.Background(), cache)
-	if err != nil {
-		panic(err)
-	}
-
 	return mux
 }
 
@@ -151,6 +145,12 @@ func postInitialize(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Get("http://localhost:9000/api/group/collect")
+
+	cache = NewCache()
+	err := initChairLocationCache(context.Background(), cache)
+	if err != nil {
+		panic(err)
+	}
 
 	writeJSON(w, http.StatusOK, postInitializeResponse{Language: "go"})
 }
