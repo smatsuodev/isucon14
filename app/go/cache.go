@@ -61,6 +61,11 @@ func updateChairLocation(ctx context.Context, cache *AppCache, location ChairLoc
 				UpdatedAt: location.CreatedAt,
 			})
 		}
+	} else {
+		cache.totalDistanceCache.Set(ctx, location.ChairID, TotalDistanceCache{
+			Distance:  0,
+			UpdatedAt: location.CreatedAt,
+		})
 	}
 	return nil
 }
