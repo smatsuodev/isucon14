@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	crand "crypto/rand"
 	"encoding/json"
 	"fmt"
@@ -21,6 +22,8 @@ import (
 var db *sqlx.DB
 
 func main() {
+	ctx := context.Background()
+	go listenJobChannels(ctx)
 	mux := setup()
 	slog.Info("Listening on :8080")
 	http.ListenAndServe(":8080", mux)
@@ -142,8 +145,6 @@ func postInitialize(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cache = NewAppCache(ctx)
-
-	go listenJobChannels(ctx)
 
 	http.Get("http://localhost:9000/api/group/collect")
 
