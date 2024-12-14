@@ -10,7 +10,7 @@ vars:
     /etc/mysql
     /etc/nginx
     /etc/sysctl.d
-  COLLECT_TARGET_SERVICE: mysql nginx
+  COLLECT_TARGET_SERVICE: mysql nginx isuride-matcher isuride-go
   #
   # Rarely changed
   REPO_DIR:
