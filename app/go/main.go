@@ -4,6 +4,7 @@ import (
 	crand "crypto/rand"
 	"encoding/json"
 	"fmt"
+	"github.com/kaz/pprotein/integration"
 	"log/slog"
 	"net"
 	"net/http"
@@ -19,13 +20,18 @@ import (
 
 var db *sqlx.DB
 
+func Integrate(r *chi.Mux) {
+	r.Handle("/debug/*", integration.NewDebugHandler())
+}
+
 func main() {
 	mux := setup()
+	Integrate(mux)
 	slog.Info("Listening on :8080")
 	http.ListenAndServe(":8080", mux)
 }
 
-func setup() http.Handler {
+func setup() *chi.Mux {
 	host := os.Getenv("ISUCON_DB_HOST")
 	if host == "" {
 		host = "127.0.0.1"
@@ -137,6 +143,8 @@ func postInitialize(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, err)
 		return
 	}
+
+	http.Get("http://localhost:9000/api/group/collect")
 
 	writeJSON(w, http.StatusOK, postInitializeResponse{Language: "go"})
 }
