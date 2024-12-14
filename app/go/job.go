@@ -8,9 +8,8 @@ import (
 )
 
 type PostCoordinateRequest struct {
-	ctx   context.Context
-	chair *Chair
-	req   *Coordinate
+	Ctx      context.Context
+	Location *ChairLocation
 }
 
 var postCoordinateCh = make(chan *PostCoordinateRequest, 1000)
@@ -21,41 +20,28 @@ func listenJobChannels(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case req := <-postCoordinateCh:
-			chairPostCoordinateJob(req.ctx, req.chair, req.req)
+			chairPostCoordinateJob(req.Ctx, req.Location)
 		}
 	}
 }
 
-func chairPostCoordinateJob(ctx context.Context, chair *Chair, req *Coordinate) {
+func chairPostCoordinateJob(ctx context.Context, location *ChairLocation) {
 	tx, err := db.Beginx()
 	if err != nil {
 		return
 	}
 	defer tx.Rollback()
 
-	// キャッシュの更新のために取得
-	lastLocation, _ := cache.latestChairLocation.Get(ctx, chair.ID)
-
-	chairLocationID := ulid.Make().String()
 	if _, err := tx.ExecContext(
 		ctx,
-		`INSERT INTO chair_locations (id, chair_id, latitude, longitude) VALUES (?, ?, ?, ?)`,
-		chairLocationID, chair.ID, req.Latitude, req.Longitude,
+		`INSERT INTO chair_locations (id, chair_id, latitude, longitude, created_at) VALUES (?, ?, ?, ?, ?)`,
+		location.ID, location.ChairID, location.Latitude, location.Longitude, location.CreatedAt,
 	); err != nil {
 		return
 	}
 
-	location := &ChairLocation{}
-	if err := tx.GetContext(ctx, location, `SELECT * FROM chair_locations WHERE id = ?`, chairLocationID); err != nil {
-		return
-	}
-
-	// tx の失敗は考えない
-	updateLatestLocationCache(ctx, location)
-	updateTotalDistanceCache(ctx, lastLocation, location)
-
 	ride := &Ride{}
-	if err := tx.GetContext(ctx, ride, `SELECT * FROM rides WHERE chair_id = ? ORDER BY updated_at DESC LIMIT 1`, chair.ID); err != nil {
+	if err := tx.GetContext(ctx, ride, `SELECT * FROM rides WHERE chair_id = ? ORDER BY updated_at DESC LIMIT 1`, location.ChairID); err != nil {
 		if !errors.Is(err, sql.ErrNoRows) {
 			return
 		}
@@ -65,13 +51,13 @@ func chairPostCoordinateJob(ctx context.Context, chair *Chair, req *Coordinate) 
 			return
 		}
 		if status != "COMPLETED" && status != "CANCELED" {
-			if req.Latitude == ride.PickupLatitude && req.Longitude == ride.PickupLongitude && status == "ENROUTE" {
+			if location.Latitude == ride.PickupLatitude && location.Longitude == ride.PickupLongitude && status == "ENROUTE" {
 				if _, err := tx.ExecContext(ctx, "INSERT INTO ride_statuses (id, ride_id, status) VALUES (?, ?, ?)", ulid.Make().String(), ride.ID, "PICKUP"); err != nil {
 					return
 				}
 			}
 
-			if req.Latitude == ride.DestinationLatitude && req.Longitude == ride.DestinationLongitude && status == "CARRYING" {
+			if location.Latitude == ride.DestinationLatitude && location.Longitude == ride.DestinationLongitude && status == "CARRYING" {
 				if _, err := tx.ExecContext(ctx, "INSERT INTO ride_statuses (id, ride_id, status) VALUES (?, ?, ?)", ulid.Make().String(), ride.ID, "ARRIVED"); err != nil {
 					return
 				}

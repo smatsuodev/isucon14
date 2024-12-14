@@ -106,10 +106,23 @@ func chairPostCoordinate(w http.ResponseWriter, r *http.Request) {
 
 	chair := ctx.Value("chair").(*Chair)
 
+	// キャッシュの更新のために取得
+	lastLocation, _ := cache.latestChairLocation.Get(ctx, chair.ID)
+	location := &ChairLocation{
+		ID:        ulid.Make().String(),
+		ChairID:   chair.ID,
+		Latitude:  req.Latitude,
+		Longitude: req.Longitude,
+		CreatedAt: time.Now(),
+	}
+
+	// tx の失敗は考えない
+	updateLatestLocationCache(ctx, location)
+	updateTotalDistanceCache(ctx, lastLocation, location)
+
 	postCoordinateCh <- &PostCoordinateRequest{
-		ctx:   ctx,
-		chair: chair,
-		req:   req,
+		Ctx:      ctx,
+		Location: location,
 	}
 
 	writeJSON(w, http.StatusOK, &chairPostCoordinateResponse{
