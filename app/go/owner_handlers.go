@@ -217,7 +217,8 @@ WHERE owner_id = ?
 		// TODO
 		chair.TotalDistance = cachedDistance.Value.Distance
 		chair.TotalDistanceUpdatedAt = sql.NullTime{
-			Time: cachedDistance.Value.UpdatedAt,
+			Time:  cachedDistance.Value.UpdatedAt,
+			Valid: true,
 		}
 		slog.Info("chair", chair)
 	}
