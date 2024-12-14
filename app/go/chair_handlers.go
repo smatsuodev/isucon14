@@ -105,18 +105,20 @@ func chairPostCoordinate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	chair := ctx.Value("chair").(*Chair)
+	recordedAt := time.Now()
 
 	// job をキューイング
 	postCoordinateJobChan <- &PostCoordinateJobData{
-		chair: chair,
-		chairLocationCoordinate: &Coordinate{
+		Chair: chair,
+		ChairLocationCoordinate: &Coordinate{
 			Latitude:  req.Latitude,
 			Longitude: req.Longitude,
 		},
+		RecordedAt: recordedAt,
 	}
 
 	writeJSON(w, http.StatusOK, &chairPostCoordinateResponse{
-		RecordedAt: time.Now().UnixMilli(),
+		RecordedAt: recordedAt.UnixMilli(),
 	})
 }
 

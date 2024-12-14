@@ -6,11 +6,13 @@ import (
 	"errors"
 	"github.com/oklog/ulid/v2"
 	"log/slog"
+	"time"
 )
 
 type PostCoordinateJobData struct {
-	chair                   *Chair
-	chairLocationCoordinate *Coordinate
+	Chair                   *Chair
+	ChairLocationCoordinate *Coordinate
+	RecordedAt              time.Time
 }
 
 var postCoordinateJobChan = make(chan *PostCoordinateJobData, 5000)
@@ -19,13 +21,17 @@ func postCoordinateJobWorker() {
 	for {
 		select {
 		case data := <-postCoordinateJobChan:
-			performPostCoordinate(data.chair, data.chairLocationCoordinate)
+			performPostCoordinate(data)
 		}
 	}
 }
 
-func performPostCoordinate(chair *Chair, chairLocationCoordinate *Coordinate) {
+func performPostCoordinate(data *PostCoordinateJobData) {
 	ctx := context.Background()
+
+	chair := data.Chair
+	latitude := data.ChairLocationCoordinate.Latitude
+	longitude := data.ChairLocationCoordinate.Longitude
 
 	tx, err := db.Beginx()
 	if err != nil {
@@ -40,8 +46,8 @@ func performPostCoordinate(chair *Chair, chairLocationCoordinate *Coordinate) {
 	chairLocationID := ulid.Make().String()
 	if _, err := tx.ExecContext(
 		ctx,
-		`INSERT INTO chair_locations (id, chair_id, latitude, longitude) VALUES (?, ?, ?, ?)`,
-		chairLocationID, chair.ID, chairLocationCoordinate.Latitude, chairLocationCoordinate.Longitude,
+		`INSERT INTO chair_locations (id, chair_id, latitude, longitude, created_at) VALUES (?, ?, ?, ?, ?)`,
+		chairLocationID, chair.ID, latitude, longitude, data.RecordedAt,
 	); err != nil {
 		slog.Error(err.Error())
 		return
@@ -70,14 +76,14 @@ func performPostCoordinate(chair *Chair, chairLocationCoordinate *Coordinate) {
 			return
 		}
 		if status != "COMPLETED" && status != "CANCELED" {
-			if chairLocationCoordinate.Latitude == ride.PickupLatitude && chairLocationCoordinate.Longitude == ride.PickupLongitude && status == "ENROUTE" {
+			if latitude == ride.PickupLatitude && longitude == ride.PickupLongitude && status == "ENROUTE" {
 				if _, err := tx.ExecContext(ctx, "INSERT INTO ride_statuses (id, ride_id, status) VALUES (?, ?, ?)", ulid.Make().String(), ride.ID, "PICKUP"); err != nil {
 					slog.Error(err.Error())
 					return
 				}
 			}
 
-			if chairLocationCoordinate.Latitude == ride.DestinationLatitude && chairLocationCoordinate.Longitude == ride.DestinationLongitude && status == "CARRYING" {
+			if latitude == ride.DestinationLatitude && longitude == ride.DestinationLongitude && status == "CARRYING" {
 				if _, err := tx.ExecContext(ctx, "INSERT INTO ride_statuses (id, ride_id, status) VALUES (?, ?, ?)", ulid.Make().String(), ride.ID, "ARRIVED"); err != nil {
 					slog.Error(err.Error())
 					return
