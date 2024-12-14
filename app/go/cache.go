@@ -51,7 +51,7 @@ func NewAppCache() *AppCache {
 	var chairLocations []ChairLocation
 	if err := db.Select(&chairLocations, `
 		WITH tmp AS (
-		    SELECT id, MAX(created_at) FROM chair_locations GROUP BY chair_id
+		    SELECT id, MAX(created_at) FROM chair_locations GROUP BY chair_id, id
 		)
 		SELECT * FROM chair_locations WHERE id IN (SELECT id FROM tmp)
 	`); err != nil {
