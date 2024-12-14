@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"errors"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"time"
@@ -218,6 +219,7 @@ WHERE owner_id = ?
 		chair.TotalDistanceUpdatedAt = sql.NullTime{
 			Time: cachedDistance.Value.UpdatedAt,
 		}
+		slog.Info("chair", chair)
 	}
 
 	res := ownerGetChairResponse{}
