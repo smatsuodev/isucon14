@@ -571,13 +571,6 @@ func appPostRideEvaluatation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	activeRides, err := cache.activeRides.Get(ctx, ride.ChairID.String)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, err)
-		return
-	}
-	cache.activeRides.Set(ctx, ride.ChairID.String, activeRides.Value-1)
-
 	if err := tx.GetContext(ctx, ride, `SELECT * FROM rides WHERE id = ?`, rideID); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			writeError(w, http.StatusNotFound, errors.New("ride not found"))
@@ -631,6 +624,13 @@ func appPostRideEvaluatation(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, err)
 		return
 	}
+
+	activeRides, err := cache.activeRides.Get(ctx, ride.ChairID.String)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	cache.activeRides.Set(ctx, ride.ChairID.String, activeRides.Value-1)
 
 	writeJSON(w, http.StatusOK, &appPostRideEvaluationResponse{
 		CompletedAt: ride.UpdatedAt.UnixMilli(),
