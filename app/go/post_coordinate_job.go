@@ -15,7 +15,7 @@ type PostCoordinateJobData struct {
 	RecordedAt              time.Time
 }
 
-var postCoordinateJobChan = make(chan *PostCoordinateJobData, 5000)
+var postCoordinateJobChan = make(chan *PostCoordinateJobData, 10000)
 
 func postCoordinateJobWorker() {
 	for {
