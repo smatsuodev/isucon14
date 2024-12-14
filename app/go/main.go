@@ -141,6 +141,11 @@ func postInitialize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := initCache(ctx); err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+
 	http.Get("http://localhost:9000/api/group/collect")
 
 	writeJSON(w, http.StatusOK, postInitializeResponse{Language: "go"})
