@@ -13,7 +13,7 @@ type PostCoordinateJobData struct {
 	chairLocationCoordinate *Coordinate
 }
 
-var postCoordinateJobChan = make(chan *PostCoordinateJobData, 1000)
+var postCoordinateJobChan = make(chan *PostCoordinateJobData, 5000)
 
 func postCoordinateJobWorker() {
 	for {
