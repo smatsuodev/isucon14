@@ -20,18 +20,13 @@ import (
 
 var db *sqlx.DB
 
-func Integrate(r *chi.Mux) {
-	r.Handle("/debug/*", integration.NewDebugHandler())
-}
-
 func main() {
 	mux := setup()
-	Integrate(mux)
 	slog.Info("Listening on :8080")
 	http.ListenAndServe(":8080", mux)
 }
 
-func setup() *chi.Mux {
+func setup() http.Handler {
 	host := os.Getenv("ISUCON_DB_HOST")
 	if host == "" {
 		host = "127.0.0.1"
@@ -114,6 +109,8 @@ func setup() *chi.Mux {
 	{
 		mux.HandleFunc("GET /api/internal/matching", internalGetMatching)
 	}
+
+	mux.Handle("/debug/*", integration.NewDebugHandler())
 
 	return mux
 }
