@@ -132,8 +132,6 @@ func postCoordinate(ctx context.Context, data postCoordinateData) {
 	latitude := data.Coordinate.Latitude
 	longitude := data.Coordinate.Longitude
 
-	slog.Info("postCoordinate", chairID)
-
 	tx, err := db.Beginx()
 	if err != nil {
 		slog.Error(err.Error())
@@ -177,7 +175,6 @@ func postCoordinate(ctx context.Context, data postCoordinateData) {
 			return
 		}
 		if status != "COMPLETED" && status != "CANCELED" {
-			// ENROUTE -> PICKUP
 			if latitude == ride.PickupLatitude && longitude == ride.PickupLongitude && status == "ENROUTE" {
 				if _, err := tx.ExecContext(ctx, "INSERT INTO ride_statuses (id, ride_id, status) VALUES (?, ?, ?)", ulid.Make().String(), ride.ID, "PICKUP"); err != nil {
 					slog.Error(err.Error())
@@ -185,7 +182,6 @@ func postCoordinate(ctx context.Context, data postCoordinateData) {
 				}
 			}
 
-			// CARRYING -> ARRIVED
 			if latitude == ride.DestinationLatitude && longitude == ride.DestinationLongitude && status == "CARRYING" {
 				if _, err := tx.ExecContext(ctx, "INSERT INTO ride_statuses (id, ride_id, status) VALUES (?, ?, ?)", ulid.Make().String(), ride.ID, "ARRIVED"); err != nil {
 					slog.Error(err.Error())
