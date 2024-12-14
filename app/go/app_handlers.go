@@ -571,12 +571,12 @@ func appPostRideEvaluatation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	activeRides, err := appCache.activeRides.Get(ctx, ride.ChairID.String)
+	activeRides, err := cache.activeRides.Get(ctx, ride.ChairID.String)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err)
 		return
 	}
-	appCache.activeRides.Set(ctx, ride.ChairID.String, activeRides.Value-1)
+	cache.activeRides.Set(ctx, ride.ChairID.String, activeRides.Value-1)
 
 	if err := tx.GetContext(ctx, ride, `SELECT * FROM rides WHERE id = ?`, rideID); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -895,7 +895,7 @@ func appGetNearbyChairs(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		activeRides, err := appCache.activeRides.Get(ctx, chair.ID)
+		activeRides, err := cache.activeRides.Get(ctx, chair.ID)
 		if err != nil {
 			writeError(w, http.StatusInternalServerError, err)
 			return

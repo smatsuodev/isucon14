@@ -61,7 +61,7 @@ func chairPostChairs(w http.ResponseWriter, r *http.Request) {
 		Value: accessToken,
 	})
 
-	appCache.activeRides.Set(ctx, chairID, 0)
+	cache.activeRides.Set(ctx, chairID, 0)
 
 	writeJSON(w, http.StatusCreated, &chairPostChairsResponse{
 		ID:      chairID,
@@ -327,7 +327,7 @@ func chairPostRideStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	activeRides, err := appCache.activeRides.Get(ctx, chair.ID)
+	activeRides, err := cache.activeRides.Get(ctx, chair.ID)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err)
 		return
@@ -339,7 +339,7 @@ func chairPostRideStatus(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusInternalServerError, err)
 			return
 		}
-		appCache.activeRides.Set(ctx, chair.ID, activeRides.Value+1)
+		cache.activeRides.Set(ctx, chair.ID, activeRides.Value+1)
 	// After Picking up user
 	case "CARRYING":
 		status, err := getLatestRideStatus(ctx, tx, ride.ID)
