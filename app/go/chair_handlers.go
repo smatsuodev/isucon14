@@ -130,10 +130,6 @@ func chairPostCoordinate(w http.ResponseWriter, r *http.Request) {
 	}
 	loc := &ChairLocation{}
 	if err := db.GetContext(ctx, loc, `SELECT * FROM chair_locations WHERE id = ?`, chairLocationID); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			w.WriteHeader(http.StatusNoContent)
-			return
-		}
 		writeError(w, http.StatusInternalServerError, err)
 		return
 	}
