@@ -26,7 +26,8 @@ tasks:
       - ./assets/distribute_config.sh
       - task: restart-all
       # hostname が s2 だったら、isuride-matcher を stop する
-      - (hostname | grep -q s2 && sudo systemctl stop isuride-matcher) || true
+      - cmd: hostname | grep -q s2 && sudo systemctl stop isuride-matcher
+        ignore_error: true
       - task: reload-sysctl
 
   build:
