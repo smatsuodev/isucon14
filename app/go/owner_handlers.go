@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"errors"
-	"log/slog"
 	"net/http"
 	"strconv"
 	"time"
@@ -214,13 +213,18 @@ WHERE owner_id = ?
 	for i, _ := range chairs {
 		chair := &chairs[i]
 		cachedDistance, _ := cache.totalDistanceCache.Get(ctx, chair.ID)
-		// TODO
-		chair.TotalDistance = cachedDistance.Value.Distance
-		chair.TotalDistanceUpdatedAt = sql.NullTime{
-			Time:  cachedDistance.Value.UpdatedAt,
-			Valid: true,
+		if cachedDistance.Found {
+			chair.TotalDistance = cachedDistance.Value.Distance
+			chair.TotalDistanceUpdatedAt = sql.NullTime{
+				Time:  cachedDistance.Value.UpdatedAt,
+				Valid: true,
+			}
+		} else {
+			chair.TotalDistance = 0
+			chair.TotalDistanceUpdatedAt = sql.NullTime{
+				Valid: false,
+			}
 		}
-		slog.Info("chair", chair)
 	}
 
 	res := ownerGetChairResponse{}
