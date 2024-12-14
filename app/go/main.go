@@ -116,7 +116,8 @@ func setup() http.Handler {
 	mux.Handle("/debug/*", integration.NewDebugHandler())
 
 	cache = NewCache()
-	initChairLocationCache(context.Background(), cache)
+	err = initChairLocationCache(context.Background(), cache)
+	panic(err)
 
 	return mux
 }
