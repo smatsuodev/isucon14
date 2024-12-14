@@ -128,8 +128,8 @@ func chairPostCoordinate(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, err)
 		return
 	}
-	loc := &ChairLocation{}
-	if err := db.GetContext(ctx, loc, `SELECT * FROM chair_locations WHERE chair_id = ?`, chairLocationID); err != nil {
+	loc := ChairLocation{}
+	if err := db.GetContext(ctx, loc, `SELECT * FROM chair_locations WHERE id = ?`, chairLocationID); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			w.WriteHeader(http.StatusNoContent)
 			return
@@ -137,7 +137,7 @@ func chairPostCoordinate(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, err)
 		return
 	}
-	updateChairLocation(ctx, cache, *loc)
+	updateChairLocation(ctx, cache, loc)
 
 	location := &ChairLocation{}
 	if err := tx.GetContext(ctx, location, `SELECT * FROM chair_locations WHERE id = ?`, chairLocationID); err != nil {
