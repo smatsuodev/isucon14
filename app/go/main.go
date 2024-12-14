@@ -117,7 +117,9 @@ func setup() http.Handler {
 
 	cache = NewCache()
 	err = initChairLocationCache(context.Background(), cache)
-	panic(err)
+	if err != nil {
+		panic(err)
+	}
 
 	return mux
 }
