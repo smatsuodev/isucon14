@@ -15,13 +15,13 @@ type PostCoordinateJobData struct {
 	RecordedAt              time.Time
 }
 
-var postCoordinateJobChan = make(chan *PostCoordinateJobData, 10000)
+var postCoordinateJobChan = make(chan *PostCoordinateJobData, 1000)
 
 func postCoordinateJobWorker() {
 	for {
 		select {
 		case data := <-postCoordinateJobChan:
-			performPostCoordinate(data)
+			go performPostCoordinate(data)
 		}
 	}
 }
