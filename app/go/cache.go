@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"github.com/samber/lo"
+	"log"
 )
 
 var cache *AppCache = nil
@@ -45,6 +46,8 @@ func NewAppCache() *AppCache {
 	for _, totalDistance := range totalDistances {
 		_ = c.chairTotalDistances.Set(context.Background(), totalDistance.ChairID, totalDistance)
 	}
+
+	log.Println(totalDistances)
 
 	return c
 }
