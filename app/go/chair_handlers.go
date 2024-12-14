@@ -60,6 +60,8 @@ func chairPostChairs(w http.ResponseWriter, r *http.Request) {
 		Value: accessToken,
 	})
 
+	cache.activeRides.Set(ctx, chairID, 0)
+
 	writeJSON(w, http.StatusCreated, &chairPostChairsResponse{
 		ID:      chairID,
 		OwnerID: owner.ID,

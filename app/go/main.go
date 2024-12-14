@@ -141,7 +141,7 @@ func postInitialize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cache = NewAppCache()
+	cache = NewAppCache(ctx)
 
 	http.Get("http://localhost:9000/api/group/collect")
 

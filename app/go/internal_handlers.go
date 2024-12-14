@@ -49,5 +49,12 @@ func internalGetMatching(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	activeRides, err := cache.activeRides.Get(ctx, matched.ID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	cache.activeRides.Set(ctx, matched.ID, activeRides.Value+1)
+
 	w.WriteHeader(http.StatusNoContent)
 }
