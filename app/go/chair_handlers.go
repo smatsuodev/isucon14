@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"net/http"
-
 	"github.com/oklog/ulid/v2"
+	"github.com/samber/lo"
+	"net/http"
 )
 
 type chairPostChairsRequest struct {
@@ -113,6 +113,9 @@ func chairPostCoordinate(w http.ResponseWriter, r *http.Request) {
 	}
 	defer tx.Rollback()
 
+	// キャッシュの更新のために取得
+	lastLocation, _ := cache.latestChairLocation.Get(ctx, chair.ID)
+
 	chairLocationID := ulid.Make().String()
 	if _, err := tx.ExecContext(
 		ctx,
@@ -128,6 +131,25 @@ func chairPostCoordinate(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, err)
 		return
 	}
+
+	// キャッシュの更新
+	// tx の失敗は考えない
+	_ = cache.latestChairLocation.Set(ctx, chair.ID, *location)
+	diff := 0
+	if lastLocation.Found {
+		loc := lastLocation.Value
+		diff = calculateDistance(loc.Latitude, loc.Longitude, req.Latitude, req.Longitude)
+	}
+	current, _ := cache.chairTotalDistances.Get(ctx, chair.ID)
+	_ = cache.chairTotalDistances.Set(ctx, chair.ID, ChairTotalDistance{
+		ChairID: chair.ID,
+		// Value がなくてもゼロ値なのでそのまま加算してOK
+		TotalDistance: lo.Ternary(current.Found, current.Value.TotalDistance+diff, 0),
+		TotalDistanceUpdatedAt: sql.NullTime{
+			Time:  location.CreatedAt,
+			Valid: true,
+		},
+	})
 
 	ride := &Ride{}
 	if err := tx.GetContext(ctx, ride, `SELECT * FROM rides WHERE chair_id = ? ORDER BY updated_at DESC LIMIT 1`, chair.ID); err != nil {
