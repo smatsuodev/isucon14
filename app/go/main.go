@@ -143,6 +143,8 @@ func postInitialize(w http.ResponseWriter, r *http.Request) {
 
 	cache = NewAppCache(ctx)
 
+	go listenJobChannels(ctx)
+
 	http.Get("http://localhost:9000/api/group/collect")
 
 	writeJSON(w, http.StatusOK, postInitializeResponse{Language: "go"})
