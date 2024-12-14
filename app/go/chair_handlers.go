@@ -113,13 +113,6 @@ func chairPostCoordinate(w http.ResponseWriter, r *http.Request) {
 
 	chairLocationID := ulid.Make().String()
 
-	curLocation := ChairLocation{
-		ID:        chairLocationID,
-		ChairID:   chair.ID,
-		Latitude:  req.Latitude,
-		Longitude: req.Longitude,
-	}
-
 	if _, err := tx.ExecContext(
 		ctx,
 		`INSERT INTO chair_locations (id, chair_id, latitude, longitude) VALUES (?, ?, ?, ?)`,
@@ -171,7 +164,7 @@ func chairPostCoordinate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, &chairPostCoordinateResponse{
-		RecordedAt: curLocation.CreatedAt.UnixMilli(),
+		RecordedAt: location.CreatedAt.UnixMilli(),
 	})
 }
 
