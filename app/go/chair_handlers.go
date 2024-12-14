@@ -4,9 +4,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"net/http"
-
 	"github.com/oklog/ulid/v2"
+	"net/http"
 )
 
 type chairPostChairsRequest struct {
@@ -111,6 +110,9 @@ func chairPostCoordinate(w http.ResponseWriter, r *http.Request) {
 	}
 	defer tx.Rollback()
 
+	// キャッシュの更新のために取得
+	lastLocation, _ := cache.latestChairLocation.Get(ctx, chair.ID)
+
 	chairLocationID := ulid.Make().String()
 	if _, err := tx.ExecContext(
 		ctx,
@@ -126,6 +128,10 @@ func chairPostCoordinate(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, err)
 		return
 	}
+
+	// tx の失敗は考えない
+	updateLatestLocationCache(ctx, location)
+	updateTotalDistanceCache(ctx, lastLocation, location)
 
 	ride := &Ride{}
 	if err := tx.GetContext(ctx, ride, `SELECT * FROM rides WHERE chair_id = ? ORDER BY updated_at DESC LIMIT 1`, chair.ID); err != nil {
