@@ -130,8 +130,8 @@ func chairPostCoordinate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// tx の失敗は考えない
-	updateLatestLocationCache(ctx, *location)
-	updateTotalDistanceCache(ctx, lastLocation, *location)
+	updateLatestLocationCache(ctx, location)
+	updateTotalDistanceCache(ctx, lastLocation, location)
 
 	ride := &Ride{}
 	if err := tx.GetContext(ctx, ride, `SELECT * FROM rides WHERE chair_id = ? ORDER BY updated_at DESC LIMIT 1`, chair.ID); err != nil {
