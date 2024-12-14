@@ -63,3 +63,25 @@ func NewAppCache() *AppCache {
 
 	return c
 }
+
+func updateLatestLocationCache(ctx context.Context, loc ChairLocation) {
+	_ = cache.latestChairLocation.Set(ctx, loc.ChairID, loc)
+}
+
+func updateTotalDistanceCache(ctx context.Context, prevLoc Maybe[ChairLocation], loc ChairLocation) {
+	diff := lo.Ternary(
+		prevLoc.Found,
+		calculateDistance(prevLoc.Value.Latitude, prevLoc.Value.Longitude, loc.Latitude, loc.Longitude),
+		0,
+	)
+	current, _ := cache.chairTotalDistances.Get(ctx, loc.ChairID)
+	_ = cache.chairTotalDistances.Set(ctx, loc.ChairID, ChairTotalDistance{
+		ChairID: loc.ChairID,
+		// Value がなくてもゼロ値なのでそのまま加算してOK
+		TotalDistance: lo.Ternary(current.Found, current.Value.TotalDistance+diff, 0),
+		TotalDistanceUpdatedAt: sql.NullTime{
+			Time:  loc.CreatedAt,
+			Valid: true,
+		},
+	})
+}
