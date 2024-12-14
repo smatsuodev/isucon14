@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	crand "crypto/rand"
 	"encoding/json"
 	"fmt"
@@ -19,6 +20,8 @@ import (
 )
 
 var db *sqlx.DB
+
+var cache *AppCache
 
 func main() {
 	mux := setup()
@@ -111,6 +114,9 @@ func setup() http.Handler {
 	}
 
 	mux.Handle("/debug/*", integration.NewDebugHandler())
+
+	cache = NewCache()
+	initChairLocationCache(context.Background(), cache)
 
 	return mux
 }
