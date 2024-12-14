@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/oklog/ulid/v2"
-	"log"
 	"net/http"
 )
 
@@ -142,8 +141,8 @@ func chairPostCoordinate(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, err)
 		return
 	} else {
+		fmt.Println(lastLocation, location)
 		diff = calculateDistance(lastLocation.Latitude, lastLocation.Longitude, req.Latitude, req.Longitude)
-		log.Println(diff)
 	}
 	current, _ := cache.chairTotalDistances.Get(ctx, chair.ID)
 	_ = cache.chairTotalDistances.Set(ctx, chair.ID, ChairTotalDistance{
