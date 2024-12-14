@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"errors"
+	"github.com/samber/lo"
 	"net/http"
 	"strconv"
 	"time"
@@ -194,6 +195,34 @@ func ownerGetChairs(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	owner := ctx.Value("owner").(*Owner)
 
+	type ChairTotalDistance struct {
+		ChairID                string       `db:"chair_id"`
+		TotalDistance          int          `db:"total_distance"`
+		TotalDistanceUpdatedAt sql.NullTime `db:"total_distance_updated_at"`
+	}
+	query := `
+		WITH tmp AS (
+			SELECT chair_id,
+				   created_at,
+				   ABS(latitude - LAG(latitude) OVER (PARTITION BY chair_id ORDER BY created_at)) +
+				   ABS(longitude - LAG(longitude) OVER (PARTITION BY chair_id ORDER BY created_at)) AS distance
+			FROM chair_locations
+		)
+		SELECT chair_id,
+			   SUM(IFNULL(distance, 0)) AS total_distance,
+			   MAX(created_at)          AS total_distance_updated_at
+		FROM tmp
+		GROUP BY chair_id;
+	`
+	totalDistances := []ChairTotalDistance{}
+	if err := db.SelectContext(ctx, &totalDistances, query); err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	totalDistancesByChairID := lo.GroupBy(totalDistances, func(item ChairTotalDistance) string {
+		return item.ChairID
+	})
+
 	chairs := []chairWithDetail{}
 	if err := db.SelectContext(ctx, &chairs, `SELECT id,
        owner_id,
@@ -202,23 +231,20 @@ func ownerGetChairs(w http.ResponseWriter, r *http.Request) {
        model,
        is_active,
        created_at,
-       updated_at,
-       IFNULL(total_distance, 0) AS total_distance,
-       total_distance_updated_at
+       updated_at
 FROM chairs
-       LEFT JOIN (SELECT chair_id,
-                          SUM(IFNULL(distance, 0)) AS total_distance,
-                          MAX(created_at)          AS total_distance_updated_at
-                   FROM (SELECT chair_id,
-                                created_at,
-                                ABS(latitude - LAG(latitude) OVER (PARTITION BY chair_id ORDER BY created_at)) +
-                                ABS(longitude - LAG(longitude) OVER (PARTITION BY chair_id ORDER BY created_at)) AS distance
-                         FROM chair_locations) tmp
-                   GROUP BY chair_id) distance_table ON distance_table.chair_id = chairs.id
 WHERE owner_id = ?
 `, owner.ID); err != nil {
 		writeError(w, http.StatusInternalServerError, err)
 		return
+	}
+
+	for i := range chairs {
+		totalDistance, ok := totalDistancesByChairID[chairs[i].ID]
+		if ok {
+			chairs[i].TotalDistance = totalDistance[0].TotalDistance
+			chairs[i].TotalDistanceUpdatedAt = totalDistance[0].TotalDistanceUpdatedAt
+		}
 	}
 
 	res := ownerGetChairResponse{}
