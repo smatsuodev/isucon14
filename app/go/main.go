@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	crand "crypto/rand"
 	"encoding/json"
 	"fmt"
@@ -19,6 +20,8 @@ import (
 )
 
 var db *sqlx.DB
+
+var cache *AppCache
 
 func main() {
 	mux := setup()
@@ -142,6 +145,12 @@ func postInitialize(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Get("http://localhost:9000/api/group/collect")
+
+	cache = NewCache()
+	err := initChairLocationCache(context.Background(), cache)
+	if err != nil {
+		panic(err)
+	}
 
 	writeJSON(w, http.StatusOK, postInitializeResponse{Language: "go"})
 }
