@@ -210,7 +210,8 @@ WHERE owner_id = ?
 		return
 	}
 
-	for _, chair := range chairs {
+	for i := range chairs {
+		chair := &chairs[i]
 		result, _ := cache.chairTotalDistances.Get(ctx, chair.ID)
 		if result.Found {
 			chair.TotalDistance = result.Value.TotalDistance
