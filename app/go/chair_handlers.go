@@ -110,6 +110,16 @@ func chairPostCoordinate(w http.ResponseWriter, r *http.Request) {
 	}
 	defer tx.Rollback()
 
+	// キャッシュの更新のために取得
+	// TODO: 最新の座標もキャッシュ?
+	lastLocation := &ChairLocation{}
+	err = tx.GetContext(
+		ctx,
+		lastLocation,
+		`SELECT * FROM chair_locations WHERE chair_id = ? ORDER BY created_at DESC LIMIT 1`,
+		chair.ID,
+	)
+
 	chairLocationID := ulid.Make().String()
 	if _, err := tx.ExecContext(
 		ctx,
@@ -128,20 +138,11 @@ func chairPostCoordinate(w http.ResponseWriter, r *http.Request) {
 
 	// キャッシュの更新
 	// tx の失敗は考えない
-	// TODO: 最新の座標もキャッシュ?
-	lastLocation := &ChairLocation{}
-	err = tx.GetContext(
-		ctx,
-		lastLocation,
-		`SELECT * FROM chair_locations WHERE chair_id = ? ORDER BY created_at DESC LIMIT 1`,
-		chair.ID,
-	)
 	diff := 0
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		writeError(w, http.StatusInternalServerError, err)
 		return
 	} else {
-		fmt.Println(lastLocation, location)
 		diff = calculateDistance(lastLocation.Latitude, lastLocation.Longitude, req.Latitude, req.Longitude)
 	}
 	current, _ := cache.chairTotalDistances.Get(ctx, chair.ID)
