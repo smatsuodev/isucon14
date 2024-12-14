@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/oklog/ulid/v2"
+	"github.com/samber/lo"
 	"net/http"
 )
 
@@ -150,7 +151,7 @@ func chairPostCoordinate(w http.ResponseWriter, r *http.Request) {
 	_ = cache.chairTotalDistances.Set(ctx, chair.ID, ChairTotalDistance{
 		ChairID: chair.ID,
 		// Value がなくてもゼロ値なのでそのまま加算してOK
-		TotalDistance: current.Value.TotalDistance + diff,
+		TotalDistance: lo.Ternary(current.Found, 0, current.Value.TotalDistance+diff),
 		TotalDistanceUpdatedAt: sql.NullTime{
 			Time:  location.CreatedAt,
 			Valid: true,
