@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/oklog/ulid/v2"
-	"log"
 	"net/http"
 	"time"
 )
@@ -109,7 +108,6 @@ func chairPostCoordinate(w http.ResponseWriter, r *http.Request) {
 	recordedAt := time.Now()
 
 	// job をキューイング
-	log.Println(len(postCoordinateJobChan))
 	postCoordinateJobChan <- &PostCoordinateJobData{
 		Chair: chair,
 		ChairLocationCoordinate: &Coordinate{
