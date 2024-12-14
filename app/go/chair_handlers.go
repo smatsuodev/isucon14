@@ -121,7 +121,6 @@ func chairPostCoordinate(w http.ResponseWriter, r *http.Request) {
 	updateTotalDistanceCache(ctx, lastLocation, location)
 
 	postCoordinateCh <- &PostCoordinateRequest{
-		Ctx:      ctx,
 		Location: location,
 	}
 

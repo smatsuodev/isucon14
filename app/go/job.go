@@ -8,11 +8,10 @@ import (
 )
 
 type PostCoordinateRequest struct {
-	Ctx      context.Context
 	Location *ChairLocation
 }
 
-var postCoordinateCh = make(chan *PostCoordinateRequest, 1000)
+var postCoordinateCh = make(chan *PostCoordinateRequest, 10000)
 
 func listenJobChannels(ctx context.Context) {
 	for {
@@ -20,12 +19,13 @@ func listenJobChannels(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case req := <-postCoordinateCh:
-			chairPostCoordinateJob(req.Ctx, req.Location)
+			chairPostCoordinateJob(req.Location)
 		}
 	}
 }
 
-func chairPostCoordinateJob(ctx context.Context, location *ChairLocation) {
+func chairPostCoordinateJob(location *ChairLocation) {
+	ctx := context.Background()
 	tx, err := db.Beginx()
 	if err != nil {
 		return
