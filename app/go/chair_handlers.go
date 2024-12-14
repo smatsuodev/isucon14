@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/oklog/ulid/v2"
 	"net/http"
+	"time"
 )
 
 type chairPostChairsRequest struct {
@@ -170,7 +171,7 @@ func chairPostCoordinate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, &chairPostCoordinateResponse{
-		RecordedAt: location.CreatedAt.UnixMilli(),
+		RecordedAt: time.Now().UnixMilli(),
 	})
 }
 
