@@ -327,11 +327,6 @@ func chairPostRideStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	activeRides, err := cache.activeRides.Get(ctx, chair.ID)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, err)
-		return
-	}
 	switch req.Status {
 	// Acknowledge the ride
 	case "ENROUTE":
